@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <audio id="background-sound" loop autoplay>
+        <source src="your-space-sound.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+    
+    
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solar System</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000;
+        }
+        can
+            display: block;
+        }
+        .info {
+            position: absolute;
+            color: white;
+            font-size: 16px;
+            display: none;
+            pointer-events: none;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 5px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="solarSystem"></canvas>
+    <div id="info" class="info"></div>
+    <script>
+        const canvas = document.getElementById('solarSystem');
+        const ctx = canvas.getContext('2d');
+        const infoDiv = document.getElementById('info');
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        const sun = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            radius: 50,
+            color: '#FDB813'
+        };
+
+        const planets = [
+            { name: 'Mercury', radius: 10, orbitRadius: 100, angle: 0, speed: 0.02, color: '#8C7853', z: 0, tilt: 0.1 },
+            { name: 'Venus', radius: 15, orbitRadius: 150, angle: 0, speed: 0.015, color: '#FFA500', z: 0, tilt: 0.2 },
+            { name: 'Earth', radius: 16, orbitRadius: 200, angle: 0, speed: 0.01, color: '#4169E1', z: 0, tilt: 0.3 },
+            { name: 'Mars', radius: 12, orbitRadius: 250, angle: 0, speed: 0.008, color: '#FF4500', z: 0, tilt: 0.4 },
+            { name: 'Jupiter', radius: 30, orbitRadius: 350, angle: 0, speed: 0.005, color: '#DEB887', z: 0, tilt: 0.5 },
+            { name: 'Saturn', radius: 25, orbitRadius: 450, angle: 0, speed: 0.003, color: '#F4A460', z: 0, tilt: 0.6 },
+            { name: 'Uranus', radius: 20, orbitRadius: 520, angle: 0, speed: 0.002, color: '#87CEEB', z: 0, tilt: 0.7 },
+            { name: 'Neptune', radius: 18, orbitRadius: 580, angle: 0, speed: 0.001, color: '#4682B4', z: 0, tilt: 0.8 }
+        ];
+
+        const planetImages = [
+            { name: 'Mercury', src: 'images/mercury.png' },
+            { name: 'Venus', src: 'images/venus.png' },
+            { name: 'Earth', src: 'images/earth.png' },
+            { name: 'Mars', src: 'images/mars.png' },
+            { name: 'Jupiter', src: 'images/jupiter.png' },
+            { name: 'Saturn', src: 'images/saturn.png' },
+            { name: 'Uranus', src: 'images/uranus.png' },
+            { name: 'Neptune', src: 'images/neptune.png' }
+        ];
+
+        const loadedImages = {};
+
+        function loadImages() {
+            planetImages.forEach(planet => {
+                const img = new Image();
+                img.src = planet.src;
+                img.onload = () => {
+                    loadedImages[planet.name] = img;
+                };
+            });
+        }
+
+        loadImages();
+
+        function drawLuminousSun() {
+            const gradient = ctx.createRadialGradient(
+                sun.x, sun.y, sun.radius * 0.2,
+                sun.x, sun.y, sun.radius * 1.5
+            );
+            gradient.addColorStop(0, 'rgba(253, 184, 19, 1)');
+            gradient.addColorStop(0.4, 'rgba(253, 184, 19, 0.8)');
+            gradient.addColorStop(1, 'rgba(253, 184, 19, 0)');
+
+            ctx.beginPath();
+            ctx.arc(sun.x, sun.y, sun.radius * 1.5, 0, Math.PI * 2);
+            ctx.fillStyle = gradient;
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.arc(sun.x, sun.y, sun.radius, 0, Math.PI * 2);
+            ctx.fillStyle = sun.color;
+            ctx.fill();
+        }
+
+        const satellite = {
+            x: 0,
+            y: 0,
+            radius: 5,
+            orbitRadius: 230,
+            angle: 0,
+            speed: 0.05,
+            color: '#FFFFFF'
+        };
+
+        const saturnRings = {
+            innerRadius: 28,
+            outerRadius: 35,
+            color: 'rgba(210, 180, 140, 0.6)'
+        };
+
+        planets[5].hasRings = true;
+        planets[5].rings = saturnRings;
+
+        function drawSatellite() {
+            satellite.x = sun.x + Math.cos(satellite.angle) * satellite.orbitRadius;
+            satellite.y = sun.y + Math.sin(satellite.angle) * satellite.orbitRadius;
+
+            ctx.beginPath();
+            ctx.arc(satellite.x, satellite.y, satellite.radius, 0, Math.PI * 2);
+            ctx.fillStyle = satellite.color;
+            ctx.fill();
+
+            satellite.angle += satellite.speed;
+        }
+
+        function addZPosition() {
+            planets.forEach(planet => {
+                planet.z = Math.random() * 100 - 50; // Random z position between -50 and 50
+            });
+        }
+
+        // Call addZPosition once to initialize z positions
+        addZPosition();
+
+        function drawPlanet(planet, index) {
+            planet.angle += planet.speed;
+            const orbitTilt = Math.sin(planet.tilt) * 50; // Create a tilt effect
+            const x = sun.x + Math.cos(planet.angle) * planet.orbitRadius;
+            const y = sun.y + Math.sin(planet.angle) * planet.orbitRadius + orbitTilt;
+
+            // Create a perspective effect based on z position
+            const perspectiveFactor = 400 / (400 + planet.z); // Change 400 to adjust depth effect
+            const scaledRadius = planet.radius * perspectiveFactor;
+
+            ctx.save();
+            ctx.translate(x, y);
+
+            // Draw the planet with perspective scaling
+            if (loadedImages[planet.name]) {
+                ctx.drawImage(loadedImages[planet.name], -scaledRadius, -scaledRadius, scaledRadius * 2, scaledRadius * 2);
+            } else {
+                ctx.beginPath();
+                ctx.arc(0, 0, scaledRadius, 0, Math.PI * 2);
+                ctx.fillStyle = planet.color;
+                ctx.fill();
+            }
+
+            // Simple shading effect
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.beginPath();
+            ctx.arc(0, 0, scaledRadius, 0, Math.PI * 2);
+            ctx.fill();
+
+            if (planet.hasRings) {
+                ctx.beginPath();
+                ctx.ellipse(0, 0, planet.rings.outerRadius * perspectiveFactor, planet.rings.outerRadius / 3 * perspectiveFactor, 0, 0, Math.PI * 2);
+                ctx.strokeStyle = planet.rings.color;
+                ctx.lineWidth = planet.rings.outerRadius - planet.rings.innerRadius;
+                ctx.stroke();
+            }
+
+            // Draw planet label
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(planet.name, 0, -scaledRadius - 10);
+
+            ctx.restore();
+        }
+
+        // Asteroid Belt
+        const asteroidBelt = [];
+        const asteroidCount = 100;
+
+        // Create random asteroids between Mars and Jupiter
+        for (let i = 0; i < asteroidCount; i++) {
+            asteroidBelt.push({
+                angle: Math.random() * Math.PI * 2,
+                orbitRadius: 275 + Math.random() * 50, // Between Mars and Jupiter
+                radius: 2 + Math.random() * 3,
+                speed: 0.004 + Math.random() * 0.002,
+                color: '#8B8989'
+            });
+        }
+
+        function drawAsteroidBelt() {
+            asteroidBelt.forEach(asteroid => {
+                asteroid.angle += asteroid.speed;
+                const x = sun.x + Math.cos(asteroid.angle) * asteroid.orbitRadius;
+                const y = sun.y + Math.sin(asteroid.angle) * asteroid.orbitRadius;
+
+                ctx.beginPath();
+                ctx.arc(x, y, asteroid.radius, 0, Math.PI * 2);
+                ctx.fillStyle = asteroid.color;
+                ctx.fill();
+            });
+        }
+
+        // Earth Asteroid Belt
+        const earthAsteroidBelt = [];
+        const earthAsteroidCount = 50;
+
+        // Create random asteroids near Earth's orbit
+        for (let i = 0; i < earthAsteroidCount; i++) {
+            earthAsteroidBelt.push({
+                angle: Math.random() * Math.PI * 2,
+                orbitRadius: 210 + Math.random() * 20, // Near Earth's orbit
+                radius: 1 + Math.random() * 2,
+                speed: 0.006 + Math.random() * 0.003,
+                color: '#C0C0C0'
+            });
+        }
+
+        function drawEarthAsteroidBelt() {
+            earthAsteroidBelt.forEach(asteroid => {
+                asteroid.angle += asteroid.speed;
+                const x = sun.x + Math.cos(asteroid.angle) * asteroid.orbitRadius;
+                const y = sun.y + Math.sin(asteroid.angle) * asteroid.orbitRadius;
+
+                ctx.beginPath();
+                ctx.arc(x, y, asteroid.radius, 0, Math.PI * 2);
+                ctx.fillStyle = asteroid.color;
+                ctx.fill();
+            });
+        }
+
+        function drawOrbit(radius) {
+            ctx.beginPath();
+            ctx.arc(sun.x, sun.y, radius, 0, Math.PI * 2);
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.lineWidth = 0.5;
+            ctx.stroke();
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawLuminousSun();
+            drawSatellite();
+            planets.forEach(drawPlanet);
+            drawAsteroidBelt();
+            drawEarthAsteroidBelt();
+            
+
+            // Draw orbits
+            planets.forEach(planet => {
+                drawOrbit(planet.orbitRadius);
+            });
+
+            requestAnimationFrame(draw);
+        }
+
+        // Handle clicks on planets for info display
+        canvas.addEventListener('click', (event) => {
+            const mouseX = event.clientX;
+            const mouseY = event.clientY;
+
+            planets.forEach(planet => {
+                const orbitX = sun.x + Math.cos(planet.angle) * planet.orbitRadius;
+                const orbitY = sun.y + Math.sin(planet.angle) * planet.orbitRadius;
+
+                const distance = Math.hypot(mouseX - orbitX, mouseY - orbitY);
+                if (distance < planet.radius) {
+                    infoDiv.style.left = `${mouseX + 10}px`;
+                    infoDiv.style.top = `${mouseY + 10}px`;
+                    infoDiv.innerText = `${planet.name}\nOrbit Radius: ${planet.orbitRadius}`;
+                    infoDiv.style.display = 'block';
+                }
+            });
+        });
+
+        // Hide info box when clicking elsewhere
+        window.addEventListener('click', (event) => {
+            if (!infoDiv.contains(event.target)) {
+                infoDiv.style.display = 'none';
+            }
+        });
+
+        draw();
+    </script>
+</body>
+</html

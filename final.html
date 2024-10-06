@@ -1,21 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <audio id="background-sound" loop autoplay>
-            <source src="your-space-sound.mp3" type="audio/mpeg">
-            Your browser does not support the audio element.
-        </audio>
+<head>
+    <audio id="background-sound" loop autoplay>
+        <source src="your-space-sound.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
 
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Solar System</title>
-        <style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solar System</title>
+    <style>
         body {
             margin: 0;
             overflow: hidden;
             background-color: #000;
         }
-        can{
+        canvas {
             display: block;
         }
         .info {
@@ -29,14 +29,18 @@
             border-radius: 5px;
         }
     </style>
-    </head>
-    <body>
-        <canvas id="solarSystem"></canvas>
-        <div id="info" class="info"></div>
-        <script>
+</head>
+<body>
+    <canvas id="solarSystem"></canvas>
+    <div id="info" class="info"></div>
+    <script>
         const canvas = document.getElementById('solarSystem');
         const ctx = canvas.getContext('2d');
         const infoDiv = document.getElementById('info');
+        let zoomLevel = 1; // Initialize zoom level
+        const zoomFactor = 0.1; // Zoom sensitivity
+        const minZoom = 0.5; // Minimum zoom level
+        const maxZoom = 3; // Maximum zoom level
 
         function resizeCanvas() {
             canvas.width = window.innerWidth;
@@ -53,7 +57,6 @@
             color: '#FDB813'
         };
 
-        
         const planets = [
             { name: 'Mercury', radius: 10, orbitRadius: 100, angle: 0, speed: 0.02, color: '#8C7853', z: 0 },
             { name: 'Venus', radius: 15, orbitRadius: 150, angle: 0, speed: 0.015, color: '#FFA500', z: 0 },
@@ -132,7 +135,7 @@
         function drawSatellite() {
             const earthIndex = planets.findIndex(planet => planet.name === 'Earth');
             const earth = planets[earthIndex];
-            
+
             const earthX = sun.x + Math.cos(earth.angle) * earth.orbitRadius;
             const earthY = sun.y + Math.sin(earth.angle) * earth.orbitRadius;
 
@@ -154,7 +157,7 @@
 
             // Create a perspective effect based on z position
             const perspectiveFactor = 400 / (400 + planet.z); // Change 400 to adjust depth effect
-            const scaledRadius = planet.radius * perspectiveFactor;
+            const scaledRadius = planet.radius * perspectiveFactor * zoomLevel; // Scale with zoom level
 
             ctx.save();
             ctx.translate(x, y);
@@ -177,7 +180,7 @@
 
             if (planet.hasRings) {
                 ctx.beginPath();
-                ctx.ellipse(0, 0, planet.rings.outerRadius * perspectiveFactor, planet.rings.outerRadius / 3 * perspectiveFactor, 0, 0, Math.PI * 2);
+                ctx.ellipse(0, 0, planet.rings.outerRadius * perspectiveFactor * zoomLevel, planet.rings.outerRadius / 3 * perspectiveFactor * zoomLevel, 0, 0, Math.PI * 2);
                 ctx.strokeStyle = planet.rings.color;
                 ctx.lineWidth = planet.rings.outerRadius - planet.rings.innerRadius;
                 ctx.stroke();
@@ -214,7 +217,7 @@
                 const y = sun.y + Math.sin(asteroid.angle) * asteroid.orbitRadius;
 
                 ctx.beginPath();
-                ctx.arc(x, y, asteroid.radius, 0, Math.PI * 2);
+                ctx.arc(x, y, asteroid.radius * zoomLevel, 0, Math.PI * 2); // Scale with zoom level
                 ctx.fillStyle = asteroid.color;
                 ctx.fill();
             });
@@ -222,16 +225,16 @@
 
         // Earth Asteroid Belt
         const earthAsteroidBelt = [];
-        const earthAsteroidCount = 100;
+        const earthAsteroidCount = 500;
 
-        // Create random asteroids near Earth's orbit
+        // Create random asteroids around Earth
         for (let i = 0; i < earthAsteroidCount; i++) {
             earthAsteroidBelt.push({
                 angle: Math.random() * Math.PI * 2,
-                orbitRadius: 210 + Math.random() * 20, // Near Earth's orbit
+                orbitRadius: 200 + Math.random() * 30, // Around Earth
                 radius: 1 + Math.random() * 2,
-                speed: 0.006 + Math.random() * 0.003,
-                color: '#C0C0C0'
+                speed: 0.002 + Math.random() * 0.001,
+                color: '#A9A9A9'
             });
         }
 
@@ -242,94 +245,107 @@
                 const y = sun.y + Math.sin(asteroid.angle) * asteroid.orbitRadius;
 
                 ctx.beginPath();
-                ctx.arc(x, y, asteroid.radius, 0, Math.PI * 2);
+                ctx.arc(x, y, asteroid.radius * zoomLevel, 0, Math.PI * 2); // Scale with zoom level
                 ctx.fillStyle = asteroid.color;
                 ctx.fill();
             });
         }
 
-        // Neptune Asteroid Belt (Kuiper Belt)
+        // Kuiper Belt
         const kuiperBelt = [];
-        const kuiperBeltCount = 10000;
+        const kuiperCount = 300;
 
-        // Create random asteroids beyond Neptune's orbit
-        for (let i = 0; i < kuiperBeltCount; i++) {
+        // Create random Kuiper Belt objects
+        for (let i = 0; i < kuiperCount; i++) {
             kuiperBelt.push({
                 angle: Math.random() * Math.PI * 2,
-                orbitRadius: 630 + Math.random() * 150, // Beyond Neptune's orbit
-                radius: 1 + Math.random() * 2,
-                speed: 0.0005 + Math.random() * 0.0005,
-                color: '#A0A0A0' // Slate gray color
+                orbitRadius: 550 + Math.random() * 100, // Around Neptune
+                radius: 1 + Math.random() * 3,
+                speed: 0.001 + Math.random() * 0.0005,
+                color: '#B0C4DE'
             });
         }
 
         function drawKuiperBelt() {
-            kuiperBelt.forEach(asteroid => {
-                asteroid.angle += asteroid.speed;
-                const x = sun.x + Math.cos(asteroid.angle) * asteroid.orbitRadius;
-                const y = sun.y + Math.sin(asteroid.angle) * asteroid.orbitRadius;
+            kuiperBelt.forEach(kuiper => {
+                kuiper.angle += kuiper.speed;
+                const x = sun.x + Math.cos(kuiper.angle) * kuiper.orbitRadius;
+                const y = sun.y + Math.sin(kuiper.angle) * kuiper.orbitRadius;
 
                 ctx.beginPath();
-                ctx.arc(x, y, asteroid.radius, 0, Math.PI * 2);
-                ctx.fillStyle = asteroid.color;
+                ctx.arc(x, y, kuiper.radius * zoomLevel, 0, Math.PI * 2); // Scale with zoom level
+                ctx.fillStyle = kuiper.color;
                 ctx.fill();
             });
         }
-        
-        function drawOrbit(radius) {
+
+        function drawOrbit(orbitRadius) {
             ctx.beginPath();
-            ctx.arc(sun.x, sun.y, radius, 0, Math.PI * 2);
-            ctx.strokeStyle = '#FFFFFF';
-            ctx.lineWidth = 0.5;
+            ctx.arc(sun.x, sun.y, orbitRadius * zoomLevel, 0, Math.PI * 2); // Scale orbits with zoom level
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.lineWidth = 1;
             ctx.stroke();
         }
 
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.save(); // Save the current context state
+
+            ctx.scale(zoomLevel, zoomLevel); // Apply zoom
+
             drawLuminousSun();
             drawSatellite();
             planets.forEach(drawPlanet);
             drawAsteroidBelt();
             drawEarthAsteroidBelt();
             drawKuiperBelt();
-            drawKuiperBelt();
-            
-            
 
             // Draw orbits
             planets.forEach(planet => {
                 drawOrbit(planet.orbitRadius);
             });
 
+            ctx.restore(); // Restore to original state
+
             requestAnimationFrame(draw);
         }
 
-        // Handle clicks on planets for info display
+        // Zoom functionality using mouse wheel
+        canvas.addEventListener('wheel', (event) => {
+            event.preventDefault();
+            if (event.deltaY < 0) {
+                zoomLevel = Math.min(maxZoom, zoomLevel + zoomFactor); // Zoom in
+            } else {
+                zoomLevel = Math.max(minZoom, zoomLevel - zoomFactor); // Zoom out
+            }
+        });
+
+        // Click to show planet info
         canvas.addEventListener('click', (event) => {
-            const mouseX = event.clientX;
-            const mouseY = event.clientY;
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = (event.clientX - rect.left) / zoomLevel; // Adjust for zoom
+            const mouseY = (event.clientY - rect.top) / zoomLevel; // Adjust for zoom
 
             planets.forEach(planet => {
-                const orbitX = sun.x + Math.cos(planet.angle) * planet.orbitRadius;
-                const orbitY = sun.y + Math.sin(planet.angle) * planet.orbitRadius;
+                const x = sun.x + Math.cos(planet.angle) * planet.orbitRadius;
+                const y = sun.y + Math.sin(planet.angle) * planet.orbitRadius;
 
-                const distance = Math.hypot(mouseX - orbitX, mouseY - orbitY);
-                if (distance < planet.radius) {
-                    infoDiv.style.left = `${mouseX + 10}px`;
-                    infoDiv.style.top = `${mouseY + 10}px`;
-                    infoDiv.innerText = `${planet.name}\nOrbit Radius: ${planet.orbitRadius}`;
+                const dx = mouseX - x;
+                const dy = mouseY - y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance < planet.radius) { // Check against the planet radius
+                    infoDiv.style.left = `${event.clientX}px`;
+                    infoDiv.style.top = `${event.clientY}px`;
+                    infoDiv.innerText = `You clicked on ${planet.name}!`;
                     infoDiv.style.display = 'block';
+                } else {
+                    infoDiv.style.display = 'none';
                 }
             });
-        });
-        // Hide info box when clicking elsewhere
-        window.addEventListener('click', (event) => {
-            if (!infoDiv.contains(event.target)) {
-                infoDiv.style.display = 'none';
-            }
         });
 
         draw();
     </script>
-    </body>
-</html> 
+</body>
+</html>

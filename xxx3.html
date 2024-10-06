@@ -1,0 +1,49 @@
+<script>
+    let scale = 1;
+    let originX = canvas.width / 2;
+    let originY = canvas.height / 2;
+
+    canvas.addEventListener('wheel', (event) => {
+        event.preventDefault();
+        
+        const zoomSensitivity = 0.001;
+        const delta = event.deltaY;
+
+        if (delta < 0) {
+            scale += zoomSensitivity;
+        } else {
+            scale -= zoomSensitivity;
+        }
+
+        scale = Math.max(0.5, Math.min(2, scale));
+
+        originX -= (event.clientX - originX) * zoomSensitivity * (delta > 0 ? -1 : 1);
+        originY -= (event.clientY - originY) * zoomSensitivity * (delta > 0 ? -1 : 1);
+    });
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        ctx.save();
+        ctx.translate(originX, originY);
+        ctx.scale(scale, scale);
+        ctx.translate(-canvas.width / 2, -canvas.height / 2);
+
+        drawLuminousSun();
+        drawSatellite();
+        planets.forEach(drawPlanet);
+        drawAsteroidBelt();
+        drawEarthAsteroidBelt();
+        drawKuiperBelt();
+
+        planets.forEach(planet => {
+            drawOrbit(planet.orbitRadius);
+        });
+
+        ctx.restore();
+
+        requestAnimationFrame(draw);
+    }
+
+    draw();
+</script>
